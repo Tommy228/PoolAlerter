@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolAlerter", "PoolAlerter.csproj", "{236E93AE-FA1A-4ACC-8F36-DD7732EDB2AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{236E93AE-FA1A-4ACC-8F36-DD7732EDB2AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{236E93AE-FA1A-4ACC-8F36-DD7732EDB2AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{236E93AE-FA1A-4ACC-8F36-DD7732EDB2AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{236E93AE-FA1A-4ACC-8F36-DD7732EDB2AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
