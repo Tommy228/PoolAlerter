@@ -18,7 +18,7 @@ namespace PoolAlerter.Code.Discord.Channels
             GetChannel(_discordConfiguration.Channels.ErrorsChannelId);
 
         public Maybe<SocketTextChannel> HeartbeatsChannel =>
-            GetChannel(_discordConfiguration.Channels.HeartbeatChannelId);
+            GetChannel(_discordConfiguration.Channels.HeartbeatsChannelId);
 
         public DiscordChannelsHolder(DiscordSocketClient discordSocketClient, DiscordConfiguration discordConfiguration)
         {

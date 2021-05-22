@@ -48,9 +48,9 @@ namespace PoolAlerter.Code._1337.PoolCheck
             {
                 _logger.LogDebug("Checking pool availability by viewing text");
 
-                var poolText = driver.FindElement(By.CssSelector("#subs-content > div.row > div > p"));
+                var poolText = driver.FindElement(By.CssSelector("#subs-content > p"));
                 var isPoolAvailable = !poolText?.Text.TrimStart().StartsWith(
-                    "De nouveaux creneaux ouvriront prochainement",
+                    "Aucune piscine n'est actuellement disponible",
                     StringComparison.InvariantCulture
                 ) ?? true;
 

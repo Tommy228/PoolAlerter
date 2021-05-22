@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Discord;
 
 namespace PoolAlerter.Code.Discord.Configuration
@@ -14,6 +15,8 @@ namespace PoolAlerter.Code.Discord.Configuration
         public string TimeZone { get; init; }
         
         public DiscordChannelsConfiguration Channels { get; init; }
+
+        public ICollection<ulong> UserIdsToWarn { get; init; }
         
         public LogSeverity ParseLogSeverity()
         {
@@ -30,6 +33,6 @@ namespace PoolAlerter.Code.Discord.Configuration
         
         public ulong ErrorsChannelId { get; init; }
         
-        public ulong HeartbeatChannelId { get; init; }
+        public ulong HeartbeatsChannelId { get; init; }
     }
 }

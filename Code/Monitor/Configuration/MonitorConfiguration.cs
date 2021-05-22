@@ -6,8 +6,8 @@
         
         public uint TimeBetweenHeartbeatsSeconds { get; init; }
         
-        public string StartHourUtc { get; init; }
+        public uint StartHourUtc { get; init; }
         
-        public string EndHourUtc { get; init; }
+        public uint EndHourUtc { get; init; }
     }
 }
