@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NodaTime;
 using PoolAlerter.Code._1337.Configuration;
 using PoolAlerter.Code._1337.PoolCheck;
 using PoolAlerter.Code.Discord.Configuration;
@@ -11,6 +12,7 @@ using PoolAlerter.Code.Discord.Startup;
 using PoolAlerter.Code.Monitor;
 using PoolAlerter.Code.Monitor.Configuration;
 using PoolAlerter.Code.Utils;
+using SystemClock = NodaTime.SystemClock;
 
 await Host
     .CreateDefaultBuilder(args)
@@ -37,6 +39,7 @@ await Host
             .AddBoundConfiguration<MonitorConfiguration>("Monitor")
             .AddTransient<IPoolAvailabilityChecker, PoolAvailabilityChecker>()
             .AddTransient<IDiscordNotifier, DiscordNotifier>()
+            .AddSingleton<IClock>(_ => SystemClock.Instance)
             .AddHostedService<DiscordStartupService>()
             .AddHostedService<PoolMonitor>();
     })

@@ -7,7 +7,7 @@ namespace PoolAlerter.Code.Utils
     internal static class ConfigurationExtensions
     {
         public static IServiceCollection AddBoundConfiguration<T>(
-            this IServiceCollection services,
+            [NotNull] this IServiceCollection services,
             [NotNull] string path
         ) where T : class, new()
             =>

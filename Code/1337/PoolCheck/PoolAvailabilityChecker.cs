@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using PoolAlerter.Code._1337.Configuration;
+using LogLevel = OpenQA.Selenium.LogLevel;
 
 namespace PoolAlerter.Code._1337.PoolCheck
 {
@@ -14,7 +15,7 @@ namespace PoolAlerter.Code._1337.PoolCheck
         private readonly ILogger<PoolAvailabilityChecker> _logger;
 
         public bool IsCheckInProgress { get; private set; }
-        
+
         public PoolAvailabilityChecker(_1337Configuration configuration, ILogger<PoolAvailabilityChecker> logger)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -23,13 +24,10 @@ namespace PoolAlerter.Code._1337.PoolCheck
 
         public Result<bool> CheckPoolAvailabilityAsync()
         {
-            _logger.LogDebug("Starting chrome driver");
-            
             this.IsCheckInProgress = true;
-            
-            var chromeOptions = new ChromeOptions();
-            chromeOptions.AddArgument("headless");
-            using var driver = new ChromeDriver(chromeOptions);
+
+            _logger.LogDebug("Starting chrome driver");
+            using var driver = CreateWebDriver();
 
             var loginResult = this.Login(driver);
             if (!loginResult.IsSuccess)
@@ -63,13 +61,11 @@ namespace PoolAlerter.Code._1337.PoolCheck
                 this.IsCheckInProgress = false;
             }
         }
-        
+
         private Result Login(IWebDriver driver)
         {
             var url = _configuration.Url;
-
             _logger.LogDebug("Navigating to {Url}", url);
-
             driver.Navigate().GoToUrl(new Uri(url));
 
             try
@@ -93,6 +89,28 @@ namespace PoolAlerter.Code._1337.PoolCheck
                 _logger.LogError(e, "Authentication failed");
                 return Result.Fail("Could not log in");
             }
+        }
+
+        private IWebDriver CreateWebDriver()
+        {
+            var chromeOptions = new ChromeOptions();
+            if (_configuration.Webdriver.Headless)
+            {
+                chromeOptions.AddArgument("headless");
+            }
+
+            var logLevels = _configuration.Webdriver.LogLevels;
+            if (logLevels != null)
+            {
+                foreach (var (logType, logLevelName) in _configuration.Webdriver.LogLevels)
+                {
+                    var isLogLevelValid = Enum.TryParse(typeof(LogLevel), logLevelName, out var logLevel);
+                    if (!isLogLevelValid) continue;
+                    chromeOptions.SetLoggingPreference(logType, (LogLevel) logLevel!);
+                }   
+            }
+
+            return new ChromeDriver(chromeOptions);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -17,34 +18,33 @@ namespace PoolAlerter.Code.Monitor
         private readonly MonitorConfiguration _monitorConfiguration;
         private readonly Timer _timer;
 
+        private TimeSpan TimeBetweenChecks =>
+            TimeSpan.FromSeconds(_monitorConfiguration.TimeBetweenChecksSeconds);
+
         public PoolMonitor(
             IPoolAvailabilityChecker poolAvailabilityChecker,
             ILogger<PoolMonitor> logger,
             IDiscordNotifier discordNotifier,
             MonitorConfiguration monitorConfiguration)
         {
-            _poolAvailabilityChecker = poolAvailabilityChecker ??
-                                       throw new ArgumentNullException(nameof(poolAvailabilityChecker));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _discordNotifier = discordNotifier ?? throw new ArgumentNullException(nameof(discordNotifier));
-            _monitorConfiguration =
-                monitorConfiguration ?? throw new ArgumentNullException(nameof(monitorConfiguration));
-            _timer = new Timer(MonitorPool, null, Timeout.Infinite, Timeout.Infinite);
+            _poolAvailabilityChecker = poolAvailabilityChecker;
+            _logger = logger;
+            _discordNotifier = discordNotifier;
+            _monitorConfiguration = monitorConfiguration;
+            #pragma warning disable 4014
+            _timer = new Timer(_ => MonitorPool(_), null, Timeout.Infinite, Timeout.Infinite);
+            #pragma warning restore 4014
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            Next();
-            return Task.CompletedTask;
+            await MonitorPool(null);
         }
-
-        private void Next()
+        
+        private async Task MonitorPool(object state)
         {
-            _timer?.Change(TimeSpan.FromSeconds(_monitorConfiguration.TimeBetweenChecksSeconds), TimeSpan.Zero);
-        }
-
-        private async void MonitorPool(object state)
-        {
+            void Next() => _timer?.Change(TimeBetweenChecks, TimeSpan.Zero);
+            
             _logger.LogInformation("Starting pool availability check");
 
             if (_poolAvailabilityChecker.IsCheckInProgress)
@@ -65,6 +65,10 @@ namespace PoolAlerter.Code.Monitor
                 _logger.LogError(
                     "Pool availability check failed with reasons {Reasons}",
                     string.Join(",", isPoolAvailable.Errors)
+                );
+
+                await _discordNotifier.NotifyErrorsAsync(
+                    isPoolAvailable.Errors.Select(x => x.Message).ToList()
                 );
             }
 
