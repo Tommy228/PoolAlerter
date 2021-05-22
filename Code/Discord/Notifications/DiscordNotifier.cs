@@ -1,89 +1,95 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using PoolAlerter.Code._1337.PoolCheck;
+using PoolAlerter.Code.Discord.Channels;
 using PoolAlerter.Code.Discord.Configuration;
+using PoolAlerter.Code.Discord.Notifications.Screenshot;
 
 namespace PoolAlerter.Code.Discord.Notifications
 {
     internal class DiscordNotifier : IDiscordNotifier
     {
-        private readonly DiscordSocketClient _discordSocketClient;
         private readonly DiscordConfiguration _discordConfiguration;
         private readonly ILogger<DiscordNotifier> _logger;
+        private readonly IScreenshotConverter _screenshotConverter;
+        private readonly IDiscordChannelsHolder _discordChannelsHolder;
+
         private readonly IClock _clock;
 
-        private SocketGuild Guild => _discordSocketClient.GetGuild(_discordConfiguration.ServerId);
-
         public DiscordNotifier(
-            DiscordSocketClient discordSocketClient,
             DiscordConfiguration discordConfiguration,
             ILogger<DiscordNotifier> logger,
-            IClock clock)
+            IClock clock,
+            IScreenshotConverter screenshotConverter,
+            IDiscordChannelsHolder discordChannelsHolder
+        )
         {
-            _discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
-            _discordConfiguration =
-                discordConfiguration ?? throw new ArgumentNullException(nameof(discordConfiguration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            _discordConfiguration = discordConfiguration;
+            _logger = logger;
+            _clock = clock;
+            _screenshotConverter = screenshotConverter;
+            _discordChannelsHolder = discordChannelsHolder;
         }
 
         public async Task NotifyPoolAvailabilityAsync(bool isAvailable, PoolAvailabilityResultContext context)
         {
-            var channel = Guild?.GetTextChannel(_discordConfiguration.Channels.NotificationChannelId);
-            if (channel == null)
+            var channel = _discordChannelsHolder.NotificationsChannel;
+            if (!channel.HasValue)
             {
-                _logger.LogError(
-                    "Could not find a channel with serverId {ServerId} and channelId {Channel}",
-                    _discordConfiguration.ServerId,
-                    _discordConfiguration.Channels.NotificationChannelId
-                );
+                _logger.LogError("Could not find the notifications channel");
                 return;
             }
 
-            var imageStream = new MemoryStream(context.Screenshot);
-            await channel.SendFileAsync(imageStream, "screenshot.bmp", "Image test");
-            
-            await channel.SendMessageAsync(
-                isAvailable
-                    ? GetPositiveAvailabilityMessage()
-                    : GetNegativeAvailabilityMessage()
-            );
+            var image = _screenshotConverter.ConvertToJpeg(context.Screenshot);
+
+            var message = isAvailable
+                ? GetPositiveAvailabilityMessage()
+                : GetNegativeAvailabilityMessage();
+
+            await channel.Value.SendFileAsync(image, "screenshot.jpg", message);
         }
 
         /// <inheritdoc/>
-        public async Task NotifyErrorsAsync([NotNull] IEnumerable<string> errors, PoolAvailabilityResultContext context)
+        public async Task NotifyErrorsAsync(IEnumerable<string> errors, PoolAvailabilityResultContext context)
         {
-            if (errors == null) throw new ArgumentNullException(nameof(errors));
+            errors ??= new List<string>();
 
-            var channel = Guild?.GetTextChannel(_discordConfiguration.Channels.ErrorsChannelId);
-            if (channel == null)
+            var channel = _discordChannelsHolder.ErrorsChannel;
+            if (!channel.HasValue)
             {
-                _logger.LogError(
-                    "Could not find a channel with serverId {ServerId} and channelId {Channel}",
-                    _discordConfiguration.ServerId,
-                    _discordConfiguration.Channels.ErrorsChannelId
-                );
+                _logger.LogError("Could not find the errors channel");
                 return;
             }
+
+            var image = _screenshotConverter.ConvertToJpeg(context.Screenshot);
 
             var message = new StringBuilder()
                 .Append($"Pool check failed at {FormatCurrentInstant()} due to errors\n")
                 .Append(string.Join('\n', errors.Select(e => $"> {e}")))
                 .ToString();
 
-            await channel.SendMessageAsync(message);
+            await channel.Value.SendFileAsync(image, "screenshot.jpg", message);
         }
 
-        private string GetPositiveAvailabilityMessage() => new StringBuilder().ToString();
+        public async Task SendHeartbeat()
+        {
+            var channel = _discordChannelsHolder.HeartbeatsChannel;
+            if (!channel.HasValue)
+            {
+                _logger.LogError("Could not find the heartbeat channel");
+                return;
+            }
+
+            await channel.Value.SendMessageAsync("I'm alive!");
+        }
+
+        private string GetPositiveAvailabilityMessage() =>
+            new StringBuilder().ToString();
 
         private string GetNegativeAvailabilityMessage() =>
             new StringBuilder()

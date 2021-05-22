@@ -29,5 +29,7 @@ namespace PoolAlerter.Code.Discord.Configuration
         public ulong NotificationChannelId { get; init; }
         
         public ulong ErrorsChannelId { get; init; }
+        
+        public ulong HeartbeatChannelId { get; init; }
     }
 }

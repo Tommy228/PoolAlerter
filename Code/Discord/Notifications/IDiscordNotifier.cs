@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using PoolAlerter.Code._1337.PoolCheck;
 
@@ -13,7 +12,10 @@ namespace PoolAlerter.Code.Discord.Notifications
         /// 
         /// </summary>
         /// <param name="errors"></param>
+        /// <param name="context"></param>
         /// <returns></returns>
-        public Task NotifyErrorsAsync([NotNull] IEnumerable<string> errors, PoolAvailabilityResultContext context);
+        public Task NotifyErrorsAsync(IEnumerable<string> errors, PoolAvailabilityResultContext context);
+
+        public Task SendHeartbeat();
     }
 }

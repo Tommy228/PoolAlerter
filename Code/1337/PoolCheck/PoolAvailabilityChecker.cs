@@ -20,8 +20,8 @@ namespace PoolAlerter.Code._1337.PoolCheck
 
         public PoolAvailabilityChecker(_1337Configuration configuration, ILogger<PoolAvailabilityChecker> logger)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public (Result<bool> Result, PoolAvailabilityResultContext Context) CheckPoolAvailabilityAsync()
@@ -107,16 +107,14 @@ namespace PoolAlerter.Code._1337.PoolCheck
                 chromeOptions.AddArgument("headless");
             }
 
-            var logLevels = _configuration.Webdriver.LogLevels;
-            if (logLevels != null)
+            chromeOptions.AddArgument("--window-size=1920,1080");
+            
+            foreach (var (logType, logLevelName) in _configuration.Webdriver.LogLevels)
             {
-                foreach (var (logType, logLevelName) in _configuration.Webdriver.LogLevels)
-                {
-                    var isLogLevelValid = Enum.TryParse(typeof(LogLevel), logLevelName, out var logLevel);
-                    if (!isLogLevelValid) continue;
-                    chromeOptions.SetLoggingPreference(logType, (LogLevel) logLevel!);
-                }   
-            }
+                var isLogLevelValid = Enum.TryParse(typeof(LogLevel), logLevelName, out var logLevel);
+                if (!isLogLevelValid) continue;
+                chromeOptions.SetLoggingPreference(logType, (LogLevel) logLevel!);
+            }   
 
             return new ChromeDriver(chromeOptions);
         }

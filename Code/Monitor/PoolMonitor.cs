@@ -32,19 +32,19 @@ namespace PoolAlerter.Code.Monitor
             _discordNotifier = discordNotifier;
             _monitorConfiguration = monitorConfiguration;
             #pragma warning disable 4014
-            _timer = new Timer(_ => MonitorPool(_), null, Timeout.Infinite, Timeout.Infinite);
+            _timer = new Timer(_ => MonitorPool(), null, Timeout.Infinite, Timeout.Infinite);
             #pragma warning restore 4014
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            await MonitorPool(null);
+            await MonitorPool();
         }
-        
-        private async Task MonitorPool(object state)
+
+        private async Task MonitorPool()
         {
             void Next() => _timer?.Change(TimeBetweenChecks, TimeSpan.Zero);
-            
+
             _logger.LogInformation("Starting pool availability check");
 
             if (_poolAvailabilityChecker.IsCheckInProgress)
@@ -78,11 +78,8 @@ namespace PoolAlerter.Code.Monitor
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_timer != null)
-            {
-                _timer.Change(Timeout.Infinite, 0);
-                await _timer.DisposeAsync();
-            }
+            _timer.Change(Timeout.Infinite, 0);
+            await _timer.DisposeAsync();
         }
     }
 }

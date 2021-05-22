@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -21,9 +20,9 @@ namespace PoolAlerter.Code.Discord.Startup
             ILogger<DiscordStartupService> logger
         )
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _discordSocketClient = discordSocketClient ?? throw new ArgumentNullException(nameof(discordSocketClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configuration = configuration;
+            _discordSocketClient = discordSocketClient;
+            _logger = logger;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
