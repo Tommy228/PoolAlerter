@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
 using NodaTime;
+using PoolAlerter.Code._1337.PoolCheck;
 using PoolAlerter.Code.Discord.Configuration;
 
 namespace PoolAlerter.Code.Discord.Notifications
@@ -33,7 +36,7 @@ namespace PoolAlerter.Code.Discord.Notifications
             _clock = clock ?? throw new ArgumentNullException(nameof(clock));
         }
 
-        public async Task NotifyPoolAvailabilityAsync(bool isAvailable)
+        public async Task NotifyPoolAvailabilityAsync(bool isAvailable, PoolAvailabilityResultContext context)
         {
             var channel = Guild?.GetTextChannel(_discordConfiguration.Channels.NotificationChannelId);
             if (channel == null)
@@ -46,6 +49,9 @@ namespace PoolAlerter.Code.Discord.Notifications
                 return;
             }
 
+            var imageStream = new MemoryStream(context.Screenshot);
+            await channel.SendFileAsync(imageStream, "screenshot.bmp", "Image test");
+            
             await channel.SendMessageAsync(
                 isAvailable
                     ? GetPositiveAvailabilityMessage()
@@ -54,7 +60,7 @@ namespace PoolAlerter.Code.Discord.Notifications
         }
 
         /// <inheritdoc/>
-        public async Task NotifyErrorsAsync([NotNull] IEnumerable<string> errors)
+        public async Task NotifyErrorsAsync([NotNull] IEnumerable<string> errors, PoolAvailabilityResultContext context)
         {
             if (errors == null) throw new ArgumentNullException(nameof(errors));
 

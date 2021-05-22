@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
 using FluentResults;
+using Functional.Maybe;
 using Microsoft.Extensions.Logging;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.Extensions;
 using PoolAlerter.Code._1337.Configuration;
 using LogLevel = OpenQA.Selenium.LogLevel;
 
@@ -22,20 +24,26 @@ namespace PoolAlerter.Code._1337.PoolCheck
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Result<bool> CheckPoolAvailabilityAsync()
+        public (Result<bool> Result, PoolAvailabilityResultContext Context) CheckPoolAvailabilityAsync()
         {
             this.IsCheckInProgress = true;
 
             _logger.LogDebug("Starting chrome driver");
+            
             using var driver = CreateWebDriver();
 
             var loginResult = this.Login(driver);
+            var resultContext = new PoolAvailabilityResultContext
+            {
+                Screenshot = driver.TakeScreenshot().AsByteArray
+            };
+            
             if (!loginResult.IsSuccess)
             {
                 this.IsCheckInProgress = false;
-                return Result.Fail<bool>(loginResult.Errors.FirstOrDefault());
+                return (Result.Fail<bool>(loginResult.Errors.FirstOrDefault()), resultContext);
             }
-
+            
             try
             {
                 _logger.LogDebug("Checking pool availability by viewing text");
@@ -46,15 +54,15 @@ namespace PoolAlerter.Code._1337.PoolCheck
                     StringComparison.InvariantCulture
                 ) ?? true;
 
-                return Result.Ok(isPoolAvailable);
+                return (Result.Ok(isPoolAvailable), resultContext);
             }
             catch (NoSuchElementException)
             {
-                return Result.Ok(true);
+                return (Result.Ok(true), resultContext);
             }
             catch (Exception)
             {
-                return Result.Fail("Could not determine if a pool is available");
+                return (Result.Fail("Could not determine if a pool is available"), resultContext);
             }
             finally
             {

@@ -54,11 +54,11 @@ namespace PoolAlerter.Code.Monitor
                 return;
             }
 
-            var isPoolAvailable = _poolAvailabilityChecker.CheckPoolAvailabilityAsync();
+            var (isPoolAvailable, context) = _poolAvailabilityChecker.CheckPoolAvailabilityAsync();
             if (isPoolAvailable.IsSuccess)
             {
                 _logger.LogInformation("Pool availability check finished with result {Result}", isPoolAvailable);
-                await _discordNotifier.NotifyPoolAvailabilityAsync(isPoolAvailable.Value);
+                await _discordNotifier.NotifyPoolAvailabilityAsync(isPoolAvailable.Value, context);
             }
             else
             {
@@ -68,7 +68,8 @@ namespace PoolAlerter.Code.Monitor
                 );
 
                 await _discordNotifier.NotifyErrorsAsync(
-                    isPoolAvailable.Errors.Select(x => x.Message).ToList()
+                    isPoolAvailable.Errors.Select(x => x.Message).ToList(),
+                    context
                 );
             }
 
